@@ -1,0 +1,79 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules/
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+.pg-data/
+scratch/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+ai-engine/.venv/
+.pytest_cache/
+
+# Presentations & Pitch Materials
+/CareOps_AI_Final_Presentation.pptx
+/Hackathon – Evaluation Guidelines. Hacksprint VVCE.pptx
+/*.pptx
+/Presentation_Notes.md
+/docs/presentation_assets/
+
+# Internal Reports & Audit Documentation
+/ADMIN_GOVERNANCE_REPORT.md
+/ANALYTICS_TEST_REPORT.md
+/BACKEND_INTEGRATION_REPORT.md
+/FINAL_SYSTEM_VERIFICATION_REPORT.md
+/FRONTEND_STABILIZATION_REPORT.md
+/HARDCODED_DATA_REMOVAL_REPORT.md
+/INSURANCE_TEST_REPORT.md
+/REAL_DATA_INTEGRATION_REPORT.md
+/REAL_DATA_MIGRATION_REPORT.md
+/ARCHITECTURE.md
+
+# Development & Local Tooling
+/.agents/
+/.vscode/
+/skills-lock.json
+/AGENTS.md
+/test-e2e.js
+

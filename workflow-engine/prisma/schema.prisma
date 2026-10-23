@@ -1,0 +1,176 @@
+// CareOps AI - Healthcare Workflow Engine Prisma Schema
+// Phase 1: Database Architecture & Core Relational Data Models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum Sentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+  CRITICAL
+}
+
+enum EmployeeRole {
+  STAFF
+  MANAGER
+  ADMINISTRATOR
+}
+
+enum TaskStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum EscalationLevel {
+  NONE
+  MANAGER
+  ADMINISTRATOR
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+model Call {
+  id             String    @id @default(uuid()) @db.Uuid
+  patientName    String    @map("patient_name") @db.VarChar(255)
+  patientPhone   String    @map("patient_phone") @db.VarChar(50)
+  patientMrn     String?   @map("patient_mrn") @db.VarChar(100)
+  transcript     String    @db.Text
+  summary        String    @db.Text
+  detectedIntent String    @map("detected_intent") @db.VarChar(100)
+  priority       Priority
+  sentiment      Sentiment
+  callTimestamp  DateTime  @map("call_timestamp")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relational associations
+  tasks          Task[]
+
+  @@map("calls")
+}
+
+model Department {
+  id        String     @id @db.VarChar(50)
+  name      String     @db.VarChar(255)
+  managerId String?    @map("manager_id") @db.Uuid
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  // Relational associations
+  manager   Employee?  @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  employees Employee[] @relation("DepartmentEmployees")
+  tasks     Task[]
+
+  @@map("departments")
+}
+
+model Employee {
+  id               String       @id @default(uuid()) @db.Uuid
+  departmentId     String       @map("department_id") @db.VarChar(50)
+  fullName         String       @map("full_name") @db.VarChar(255)
+  email            String       @unique @db.VarChar(255)
+  role             EmployeeRole
+  isActive         Boolean      @default(true) @map("is_active")
+  activeTasksCount Int          @default(0) @map("active_tasks_count")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  // Relational associations
+  department         Department   @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: Restrict)
+  managedDepartments Department[] @relation("DepartmentManager")
+  assignedTasks      Task[]       @relation("AssignedEmployee")
+  taskNotes          TaskNote[]   @relation("AuthorEmployee")
+
+  @@index([departmentId])
+  @@map("employees")
+}
+
+model Task {
+  id                 String          @id @default(uuid()) @db.Uuid
+  callId             String          @map("call_id") @db.Uuid
+  title              String          @db.VarChar(255)
+  description        String?         @db.Text
+  departmentId       String          @map("department_id") @db.VarChar(50)
+  assignedEmployeeId String?         @map("assigned_employee_id") @db.Uuid
+  status             TaskStatus      @default(PENDING)
+  priority           Priority        @default(MEDIUM)
+  escalationLevel    EscalationLevel @default(NONE) @map("escalation_level")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  assignedAt         DateTime?       @map("assigned_at")
+  deadlineAt         DateTime?       @map("deadline_at")
+  completedAt        DateTime?       @map("completed_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  // Relational associations
+  call             Call            @relation(fields: [callId], references: [id], onDelete: Cascade)
+  department       Department      @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  assignedEmployee Employee?       @relation("AssignedEmployee", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  notes            TaskNote[]
+  timelines        TaskTimeline[]
+
+  // Indexes
+  @@index([status])
+  @@index([deadlineAt])
+  @@index([callId])
+  @@index([departmentId])
+  @@index([assignedEmployeeId])
+  @@map("tasks")
+}
+
+model TaskNote {
+  id        String    @id @default(uuid()) @db.Uuid
+  taskId    String    @map("task_id") @db.Uuid
+  authorId  String?   @map("author_id") @db.Uuid
+  note      String    @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relational associations
+  task      Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    Employee? @relation("AuthorEmployee", fields: [authorId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([taskId])
+  @@index([authorId])
+  @@map("task_notes")
+}
+
+model TaskTimeline {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  eventType String   @map("event_type") @db.VarChar(100)
+  message   String   @db.Text
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relational associations
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([taskId])
+  @@index([actorId])
+  @@map("task_timelines")
+}
